@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
-import { Home, Table, FileText, CheckSquare } from "lucide-react";
+import { Home, Table, FileText, CheckSquare, Building2 } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 
 const navItems = [
   { label: "Home", href: "/", icon: Home },
+  { label: "Emiten", href: "/dashboard/emitens", icon: Building2 },
   { label: "Screening Batches", href: "/screening", icon: Table },
   { label: "Journal Audits", href: "/journal", icon: FileText },
   { label: "Todos", href: "/todos", icon: CheckSquare },
