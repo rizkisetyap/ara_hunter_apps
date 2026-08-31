@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast, Toaster } from "sonner";
-import { Plus, Edit2, Trash2, CheckCircle2, XCircle } from "lucide-react";
+import { Plus, Edit2, Trash2, CheckCircle2, XCircle, FileUp } from "lucide-react";
 import { type Emiten } from "@/lib/schemas/emiten";
 import { z } from "zod";
 
@@ -47,6 +47,7 @@ interface FetchResult {
 export default function EmitensClient({ initialEmitens }: EmitensClientProps) {
   const [emitens, setEmitens] = useState<Emiten[]>(initialEmitens);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [openModal, setOpenModal] = useState(false);
   const [editingEmiten, setEditingEmiten] = useState<Emiten | null>(null);
 
@@ -172,6 +173,48 @@ export default function EmitensClient({ initialEmitens }: EmitensClientProps) {
     }
   };
 
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = [
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-excel",
+    ];
+    if (!validTypes.includes(file.type)) {
+      toast.error("Please upload a valid Excel file (.xlsx or .xls)");
+      return;
+    }
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/emitens/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const json = await res.json();
+      if (res.ok) {
+        toast.success(json.message);
+        fetchEmitens();
+      } else {
+        toast.error(json.error || "Upload failed");
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error(`Upload error: ${err.message}`);
+      } else {
+        toast.error("An unknown error occurred");
+      }
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Toaster position="top-right" />
@@ -186,9 +229,27 @@ export default function EmitensClient({ initialEmitens }: EmitensClientProps) {
           </p>
         </div>
 
-        <Button onClick={handleOpenCreate} className="flex items-center gap-2">
-          <Plus size={16} /> Add Emiten
-        </Button>
+        <div className="flex items-center gap-2">
+          {uploading && (
+            <span className="text-xs text-gray-500 dark:text-gray-400 animate-pulse">
+              Uploading...
+            </span>
+          )}
+          <label className="cursor-pointer px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-lg transition-colors flex items-center gap-2">
+            <FileUp size={16} />
+            Upload Excel
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleUpload}
+              className="hidden"
+              disabled={uploading}
+            />
+          </label>
+          <Button onClick={handleOpenCreate} className="flex items-center gap-2">
+            <Plus size={16} /> Add Emiten
+          </Button>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-100 dark:border-gray-800 overflow-hidden">

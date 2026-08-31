@@ -22,7 +22,7 @@ export function middleware(request: NextRequest) {
 
   // Check API routes for x-api-key (ARA Hunter external API)
   // These routes are called by external systems, not browser clients
-  if (pathname.startsWith("/api/screening/batch") || pathname.startsWith("/api/screening/journal")) {
+  if (pathname.startsWith("/api/screening/batch") || pathname.startsWith("/api/screening/journal") || pathname.startsWith("/api/emitens/active")) {
     const apiKey = request.headers.get("x-api-key");
     if (!apiKey) {
       return NextResponse.json({ error: "Unauthorized: Missing x-api-key" }, { status: 401 });
