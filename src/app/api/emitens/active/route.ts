@@ -21,7 +21,7 @@ export async function GET(request: Request) {
 
     const { data, error } = await supabase
       .from("emitens")
-      .select("symbol")
+      .select("symbol, name")
       .eq("is_active", true)
       .order("symbol");
 
@@ -29,7 +29,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data.map((item) => item.symbol));
+    // Return structured options for dropdown
+    const emitensOptions = (data || []).map((item) => ({
+      symbol: item.symbol,
+      name: item.name,
+    }));
+
+    return NextResponse.json(emitensOptions);
   } catch (err: unknown) {
     if (err instanceof Error) {
       return NextResponse.json({ error: err.message }, { status: 500 });
