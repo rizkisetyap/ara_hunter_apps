@@ -25,8 +25,6 @@ export default function LoginPage() {
 
       if (!response.ok) {
         toast.error(data.error || "Login failed");
-        setUsername("");
-        setPassword("");
         return;
       }
 
@@ -34,21 +32,14 @@ export default function LoginPage() {
       localStorage.setItem("auth_token", data.token);
       toast.success("Login successful!");
       router.push("/");
-    } catch (err: any) {
-      toast.error(`Login error: ${err.message}`);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error(`Login error: ${err.message}`);
+      } else {
+        toast.error("An unknown error occurred");
+      }
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/auth/login", {
-        method: "DELETE",
-      });
-      localStorage.removeItem("auth_token");
-    } catch (err) {
-      // Ignore errors on logout
     }
   };
 

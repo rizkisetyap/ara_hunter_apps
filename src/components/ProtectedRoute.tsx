@@ -15,6 +15,7 @@ export default function ProtectedRoute({ children, requiredAuth = true }: Protec
   useEffect(() => {
     if (requiredAuth) {
       const token = localStorage.getItem("auth_token");
+      console.log(token)
       if (!token) {
         toast.error("Please login to access this page");
         router.push("/login");

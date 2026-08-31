@@ -1,13 +1,65 @@
 import { createAdminClient } from "@/lib/supabase/server";
 
-export default async function JournalPage() {
-  const supabase = await createAdminClient();
+// Revalidate every 60 seconds (SSG with ISR / incremental static regeneration)
+export const revalidate = 60;
 
-  const { data: journalData, error } = await supabase
-    .from("journal_audits")
-    .select("*")
-    .order("analysis_date", { ascending: false })
-    .limit(50);
+interface JournalAudit {
+  id: string;
+  symbol: string;
+  analysis_date: string;
+  tt_id: string;
+  anchor_date: string;
+  projected_date: string;
+  forecast: string;
+  action: string;
+  confidence: number;
+  confidence_breakdown: {
+    time: number;
+    price: number;
+    momentum: number;
+    trend: number;
+    compression: number;
+    volume: number;
+    penalty: number;
+  };
+  hard_vetoes: string[];
+  feature_snapshot: {
+    close: number;
+    low_3m: number;
+    high_3m: number;
+    position: number;
+    volume_ratio: number;
+    upper_wick_ratio: number;
+  };
+  parameter_version: string;
+  event_fingerprint: string;
+  decision_fingerprint: string;
+}
+
+export default async function JournalPage() {
+  let journalData: JournalAudit[] = [];
+  let error: { message: string } | null = null;
+
+  try {
+    const supabase = createAdminClient();
+    const { data, error: dbError } = await supabase
+      .from("journal_audits")
+      .select("*")
+      .order("analysis_date", { ascending: false })
+      .limit(50);
+
+    if (dbError) {
+      error = { message: dbError.message };
+    } else {
+      journalData = (data || []) as JournalAudit[];
+    }
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      error = { message: err.message };
+    } else {
+      error = { message: "An unknown error occurred" };
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -24,7 +76,7 @@ export default async function JournalPage() {
 
       <div className="space-y-4">
         {journalData && journalData.length > 0 ? (
-          journalData.map((audit: any) => (
+          journalData.map((audit: JournalAudit) => (
             <div key={audit.id} className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-100 dark:border-gray-800 p-6 space-y-4">
               <div className="flex flex-wrap justify-between items-start border-b border-gray-100 dark:border-gray-700 pb-4">
                 <div>

@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
-    const { username, password } = await request.json();
-
+    const body = await request.json();
+    const { username, password } = body as { username: string; password: string };
     const expectedUsername = process.env.ADMIN_USERNAME;
     const expectedPassword = process.env.ADMIN_PASSWORD;
 
@@ -16,8 +16,8 @@ export async function POST(request: Request) {
       // Create a simple token based on timestamp + username for demo purposes
       const token = Buffer.from(`${username}:${Date.now()}`).toString("base64");
 
-      const response = NextResponse.json({ token });
       // Set token in cookies for middleware auth check
+      const response = NextResponse.json({ token });
       response.cookies.set("auth_token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -29,12 +29,15 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      return NextResponse.json({ error: err.message }, { status: 500 });
+    }
+    return NextResponse.json({ error: "An unknown error occurred" }, { status: 500 });
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(_request: Request) {
   const response = NextResponse.json({ message: "Logged out" });
   response.cookies.set("auth_token", "", { maxAge: 0 });
   return response;

@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     }
 
     const data = validationResult.data;
-    const supabase = await createAdminClient();
+    const supabase = createAdminClient();
 
     const { error } = await supabase.from("journal_audits").insert(
       data.map((item) => ({
@@ -49,7 +49,10 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true, inserted: data.length });
-  } catch (err: any) {
-    return NextResponse.json({ error: "Internal Server Error", message: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      return NextResponse.json({ error: "Internal Server Error", message: err.message }, { status: 500 });
+    }
+    return NextResponse.json({ error: "Internal Server Error", message: "An unknown error occurred" }, { status: 500 });
   }
 }
