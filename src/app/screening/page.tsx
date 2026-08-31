@@ -8,9 +8,23 @@ interface EmitenOption {
   name: string;
 }
 
+interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 export default async function ScreeningPage() {
   let initialData: Array<Record<string, unknown>> = [];
   let symbolOptions: EmitenOption[] = [];
+  let initialPagination: PaginationMeta = {
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  };
+  const initialFilters = { symbols: [] as string[], date: "" };
 
   try {
     const supabase = createAdminClient();
@@ -27,14 +41,20 @@ export default async function ScreeningPage() {
       name: item.name,
     }));
 
-    // Fetch screening data
-    const { data: screeningData } = await supabase
+    // Fetch paginated screening data (first page with 10 items)
+    const { data: screeningData, count } = await supabase
       .from("screening_batches")
-      .select("*")
+      .select("*", { count: "exact" })
       .order("screening_date", { ascending: false })
-      .limit(50);
+      .range(0, 9); // First 10 items
 
     initialData = screeningData || [];
+    initialPagination = {
+      page: 1,
+      limit: 10,
+      total: count || 0,
+      totalPages: count ? Math.ceil(count / 10) : 0,
+    };
   } catch (err) {
     console.error("Error fetching initial screening data:", err);
   }
@@ -43,6 +63,8 @@ export default async function ScreeningPage() {
     <ScreeningClient
       initialData={initialData}
       symbolOptions={symbolOptions}
+      initialPagination={initialPagination}
+      initialFilters={initialFilters}
     />
   );
 }

@@ -12,14 +12,25 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const symbol = searchParams.get("symbol");
   const date = searchParams.get("date");
+  const page = parseInt(searchParams.get("page") || "1");
+  const limit = parseInt(searchParams.get("limit") || "50");
+
+  // Validate pagination params
+  if (isNaN(page) || page < 1 || isNaN(limit) || limit < 1) {
+    return NextResponse.json({ error: "Invalid page or limit parameter" }, { status: 400 });
+  }
 
   try {
     const supabase = createAdminClient();
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    // Build query with pagination
     let query = supabase
       .from("screening_batches")
-      .select("*")
+      .select("*", { count: "exact" })
       .order("screening_date", { ascending: false })
-      .limit(50);
+      .range(from, to);
 
     if (symbol) {
       const symbols = symbol.split(",").map((s) => s.trim()).filter(Boolean);
@@ -33,13 +44,22 @@ export async function GET(request: Request) {
     if (date) {
       query = query.eq("screening_date", date);
     }
-    const { data, error } = await query;
+
+    const { data, error, count } = await query;
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data });
+    return NextResponse.json({
+      data,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: count ? Math.ceil(count / limit) : 0,
+      },
+    });
   } catch (err: unknown) {
     if (err instanceof Error) {
       return NextResponse.json({ error: err.message }, { status: 500 });
