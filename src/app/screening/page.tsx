@@ -1,7 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import ScreeningClient from "./ScreeningClient";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 interface EmitenOption {
   symbol: string;

@@ -31,7 +31,11 @@ export default function LoginPage() {
       // Store token in localStorage (for client-side check)
       localStorage.setItem("auth_token", data.token);
       toast.success("Login successful!");
-      router.push("/");
+
+      router.refresh();
+      const params = new URLSearchParams(window.location.search);
+      const callbackUrl = params.get("callbackUrl") || "/";
+      window.location.href = callbackUrl;
     } catch (err: unknown) {
       if (err instanceof Error) {
         toast.error(`Login error: ${err.message}`);
