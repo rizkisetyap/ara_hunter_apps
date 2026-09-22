@@ -16,12 +16,17 @@ export async function POST(request: Request) {
       // Create a simple token based on timestamp + username for demo purposes
       const token = Buffer.from(`${username}:${Date.now()}`).toString("base64");
 
+      const isHttps =
+        request.headers.get("x-forwarded-proto") === "https" ||
+        request.url.startsWith("https://");
+
       // Set token in cookies for middleware auth check
       const response = NextResponse.json({ token });
       response.cookies.set("auth_token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        secure: isHttps,
+        sameSite: "lax",
+        path: "/",
         maxAge: 60 * 60 * 24, // 24 hours
       });
 
@@ -39,6 +44,6 @@ export async function POST(request: Request) {
 
 export async function DELETE(_request: Request) {
   const response = NextResponse.json({ message: "Logged out" });
-  response.cookies.set("auth_token", "", { maxAge: 0 });
+  response.cookies.set("auth_token", "", { path: "/", maxAge: 0 });
   return response;
 }
